@@ -1,28 +1,29 @@
 import pandas as pd
-import numpy as np
+from mlxtend.frequent_patterns import apriori, association_rules
+
 input_file = "c:/Users/maria/Desktop/analysis-of-social-media-user-data/SocialMediaUsersDataset.csv"
+output_file = "c:/Users/maria/Desktop/analysis-of-social-media-user-data/interests.csv"
 
-
-# print(df.values)
-
-output_file = "interests.csv"
 input_data = pd.read_csv(input_file)
 
+unique_fields = set()
+for interests in input_data['Interests'].str.split(', '):
+    unique_fields.update(interests)
 
-unique_fields = []
-for index, row in input_data.iterrows():
-    fields = row['Interests'].split(', ')
-    for field in fields:
-        if not (field in unique_fields):
-            unique_fields.append(field)
+data_dict = {'UserID': input_data['UserID']}
+for field in unique_fields:
+    data_dict[field] = input_data['Interests'].str.contains(field).astype(int)
 
-output_data = pd.DataFrame(columns=['UserID'] + list(unique_fields))
-new_rows = []
-for index, row in input_data.iterrows():
-    fields = row['Interests'].split(', ')
-    new_row = {'UserID': row['UserID']}
-    for field in unique_fields:
-        new_row[field] = 1 if field in fields else 0
-    new_rows.append(new_row)
-output_data = pd.DataFrame(new_rows)
+output_data = pd.DataFrame(data_dict)
+
 output_data.to_csv(output_file, index=False)
+
+df = pd.read_csv(output_file)
+
+freq_items = apriori(df.drop(columns=['UserID']), min_support=0.001, use_colnames=True, verbose=1, max_len=None)
+
+rules = association_rules(freq_items, metric="confidence", min_threshold=0.1, support_only=False)
+
+selected_rules = rules.sort_values(by='confidence', ascending=False)
+print(selected_rules.head(10))
+
