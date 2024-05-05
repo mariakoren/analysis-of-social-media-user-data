@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 data = pd.read_csv("DataCorrect.csv")
+data.drop(columns=['City', 'Country'])
 
 interests = data['Interests'].unique()
 interests_dict = {interest: idx for idx, interest in enumerate(interests)}
