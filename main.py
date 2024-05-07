@@ -11,15 +11,15 @@ df = pd.read_csv("c:/Users/maria/Desktop/analysis-of-social-media-user-data/Soci
 df.drop(['Name', 'UserID'], axis=1, inplace=True)
 df.to_csv('DataWithNoNameNoId.csv', index=False)
 
-# df = df.assign(**{'Interests': df['Interests'].str.split(',')}).explode('Interests')
-# df.drop_duplicates(inplace=True)
-# df.to_csv('DataCorrect.csv', index=False)
+df = df.assign(**{'Interests': df['Interests'].str.split(',')}).explode('Interests')
+df.drop_duplicates(inplace=True)
+df.to_csv('DataCorrect.csv', index=False)
 
 # df['Interests'] = df['Interests'].str.split(',').str[0]
 # df.drop_duplicates(inplace=True)
 # df.to_csv('DataCorrect.csv', index=False)
 
-df['Interests'] = df['Interests'].apply(lambda x: len(ast.literal_eval(x)))
+df['CountInterests'] = df['Interests'].apply(lambda x: len(ast.literal_eval(x)))
 
 
 df['DOB'] = pd.to_datetime(df['DOB'])
@@ -52,21 +52,27 @@ df['Gender'] = df['Gender'].map(gender_mapping)
 #  ('France', 2458), 
 #  ('Mexico', 2445)]
 
-df = df.drop(df[df['Interests'] > 10].index)
+# df = df.drop(df[df['Interests'] > 10].index)
 
 selected_countries = ['United States', 'India', 'China', 'Brazil', 'Russia', 'Germany', 'Japan', 'United Kingdom', 'France', 'Mexico']
+selected_interests = ["'Cooking'", "'Pets'" ,"'Movies'" ,"'Gaming'", "'Fitness'" ,"'Outdoor activities'", "'Travel'", "'Business and entrepreneurship'" , "'Social causes and activism'"]
+
+interest_to_index = {interest: index for index, interest in enumerate(selected_interests)}
+df['Interests'] = df['Interests'].apply(lambda x: interest_to_index[x] if x in interest_to_index else None)
+df = df.dropna(subset=['Interests']).astype({'Interests': 'int'})
+
+
 
 dfs_by_country = {}
 for country in selected_countries:
     if country in df['Country'].unique():
-        country_data = df[df['Country'] == country].head(2000)
+        country_data = df[df['Country'] == country].head(700)
         dfs_by_country[country] = country_data
 
 final_df = pd.concat(dfs_by_country.values(), ignore_index=True)
 
 
-for country, df_country in dfs_by_country.items():
-    print(f"\nDataFrame for {country}:")
-    print(df_country)
+interest_to_index = {interest: index for index, interest in enumerate(selected_countries)}
+final_df['Country'] = final_df['Country'].apply(lambda x: interest_to_index[x] if x in interest_to_index else None)
 
-df.to_csv('data.csv', index=False)
+final_df.to_csv('data.csv', index=False)
