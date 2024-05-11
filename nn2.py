@@ -11,24 +11,17 @@ import matplotlib.pyplot as plt
 
 df = pd.read_csv("data.csv")
 train_set, test_set = train_test_split(df, train_size=0.7, random_state=14)
-X_train = train_set.drop(columns=["Interests"])
-y_train = train_set["Interests"]
-X_test = test_set.drop(columns=["Interests"])
-y_test = test_set["Interests"]
-
-mlp = MLPClassifier(hidden_layer_sizes=(9, 10, 4), activation='identity', max_iter=500)
-mlp.fit(X_train,  y_train)
-        
-predictions_test = mlp.predict(X_test)
-print(accuracy_score(y_test, predictions_test))
-print(confusion_matrix(y_test, predictions_test))
+X_train = train_set.drop(columns=["Country"])
+y_train = train_set["Country"]
+X_test = test_set.drop(columns=["Country"])
+y_test = test_set["Country"]
 
 le = LabelEncoder()
 y_train_encoded = le.fit_transform(y_train)
 
 model = Sequential([
-    Dense(64, activation='tanh', input_shape=(X_train.shape[1],)),
-    Dense(32, activation='tanh'),
+    Dense(64, activation='relu', input_shape=(X_train.shape[1],)),
+    Dense(32, activation='relu'),
     Dense(len(np.unique(y_train)), activation='softmax')
 ])
 
@@ -39,6 +32,8 @@ y_pred_classes = np.argmax(y_pred, axis=1)
 accuracy = accuracy_score(y_test, le.inverse_transform(y_pred_classes))
 print(f"Neural Network Accuracy: {accuracy * 100:.2f}%")
 
+# Neural Network Accuracy: 22.54% relu
+
 cm = confusion_matrix(y_test, le.inverse_transform(y_pred_classes))
 
 labels = le.classes_
@@ -47,7 +42,7 @@ disp.plot(cmap=plt.cm.Blues)
 plt.title('Confusion Matrix')
 plt.xlabel('Predicted Label')
 plt.ylabel('True Label')
-plt.savefig('confusion_matrix_interest.png')
+plt.savefig('confusion_matrix_country.png')
 
 
 plt.plot(history.history['loss'], label='Training Loss')
@@ -56,7 +51,7 @@ plt.title('Training and Validation Loss')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.legend()
-plt.savefig('learning_curves_loss_interest.png')
+plt.savefig('learning_curves_loss_country.png')
 
 
 plt.plot(history.history['accuracy'], label='Training Accuracy')
@@ -65,4 +60,4 @@ plt.title('Training and Validation Accuracy')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
 plt.legend()
-plt.savefig('learning_curves_accuracy_interest.png')
+plt.savefig('learning_curves_accuracy_country.png')

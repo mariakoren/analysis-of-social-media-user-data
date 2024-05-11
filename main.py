@@ -11,16 +11,20 @@ df = pd.read_csv("c:/Users/maria/Desktop/analysis-of-social-media-user-data/Soci
 df.drop(['Name', 'UserID'], axis=1, inplace=True)
 df.to_csv('DataWithNoNameNoId.csv', index=False)
 
-df = df.assign(**{'Interests': df['Interests'].str.split(',')}).explode('Interests')
-df.drop_duplicates(inplace=True)
-df.to_csv('DataCorrect.csv', index=False)
-
-# df['Interests'] = df['Interests'].str.split(',').str[0]
+# df = df.assign(**{'Interests': df['Interests'].str.split(',')}).explode('Interests')
 # df.drop_duplicates(inplace=True)
 # df.to_csv('DataCorrect.csv', index=False)
 
-df['CountInterests'] = df['Interests'].apply(lambda x: len(ast.literal_eval(x)))
 
+
+
+def count_words(text):
+    words = text.split(", ")
+    return len(words)
+df['InterestCount'] = df['Interests'].apply(count_words)
+
+df['Interests'] = df['Interests'].str.split(', ').str[0]
+df.drop_duplicates(inplace=True)
 
 df['DOB'] = pd.to_datetime(df['DOB'])
 df['Age'] = ((datetime.now() - df['DOB']).dt.days / 365.25).astype(int)
@@ -52,27 +56,27 @@ df['Gender'] = df['Gender'].map(gender_mapping)
 #  ('France', 2458), 
 #  ('Mexico', 2445)]
 
-# df = df.drop(df[df['Interests'] > 10].index)
-
 selected_countries = ['United States', 'India', 'China', 'Brazil', 'Russia', 'Germany', 'Japan', 'United Kingdom', 'France', 'Mexico']
 selected_interests = ["'Cooking'", "'Pets'" ,"'Movies'" ,"'Gaming'", "'Fitness'" ,"'Outdoor activities'", "'Travel'", "'Business and entrepreneurship'" , "'Social causes and activism'"]
 
+country_to_index = {country: index for index, country in enumerate(selected_countries)}
 interest_to_index = {interest: index for index, interest in enumerate(selected_interests)}
-df['Interests'] = df['Interests'].apply(lambda x: interest_to_index[x] if x in interest_to_index else None)
+
+df['Country'] = df['Country'].apply(lambda x: country_to_index[x] if x in selected_countries else None)
+df = df.dropna(subset=['Country']).astype({'Country': 'int'})
+df = df[df['Interests'].isin(selected_interests)]
+df['Interests'] = df['Interests'].apply(lambda x: interest_to_index[x] if x in selected_interests else None)
 df = df.dropna(subset=['Interests']).astype({'Interests': 'int'})
 
+final_df = pd.DataFrame(columns=df.columns)
+grouped = df.groupby(['Country', 'Interests'])
+for (country, interest), data in grouped:
+    if len(data) < 70:
+        final_df = pd.concat([final_df, data], ignore_index=True)
+    else:
+        sampled_data = data.sample(n=70, random_state=42)
+        final_df = pd.concat([final_df, sampled_data], ignore_index=True)
 
-
-dfs_by_country = {}
-for country in selected_countries:
-    if country in df['Country'].unique():
-        country_data = df[df['Country'] == country].head(700)
-        dfs_by_country[country] = country_data
-
-final_df = pd.concat(dfs_by_country.values(), ignore_index=True)
-
-
-interest_to_index = {interest: index for index, interest in enumerate(selected_countries)}
-final_df['Country'] = final_df['Country'].apply(lambda x: interest_to_index[x] if x in interest_to_index else None)
+final_df = final_df.groupby(['Country', 'Interests']).head(70).reset_index(drop=True)
 
 final_df.to_csv('data.csv', index=False)
